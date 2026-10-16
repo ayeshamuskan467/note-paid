@@ -3,4 +3,5 @@ node_modules/
 **/.env
 dist/
 **/dist/
-notes-app/.git-backup/
+.git-backup/
+**/.git-backup/
