@@ -2,7 +2,9 @@
 import "./Notes.css";
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:5000/api/notes";
+// Railway Backend API URL
+const API_URL =
+  "https://notes-app-backend-production-9b45.up.railway.app/api/notes";
 
 function Notes() {
   const [notes, setNotes] = useState([]);
@@ -26,7 +28,9 @@ function Notes() {
       const data = await response.json();
       setNotes(data);
     } catch {
-      setError("Notes load nahi huay. Backend server check karein.");
+      setError(
+        "Notes load nahi huay. Please check your backend connection."
+      );
     }
   };
 
@@ -142,7 +146,6 @@ function Notes() {
   return (
     <div className="notes-page">
       <div className="notes-container">
-
         {/* Header */}
         <div className="notes-header">
           <h1>
@@ -155,9 +158,7 @@ function Notes() {
         {/* Add / Edit Form */}
         <form onSubmit={handleSubmit} className="note-form">
           <h2>
-            {editingId
-              ? "Edit Your Note "
-              : "Create a New Note "}
+            {editingId ? "Edit Your Note" : "Create a New Note"}
           </h2>
 
           <input
@@ -209,7 +210,7 @@ function Notes() {
 
         {/* Notes List Heading */}
         <div className="notes-list-header">
-          <h2>My Collection </h2>
+          <h2>My Collection</h2>
 
           <span className="note-count">
             {notes.length} Notes
@@ -219,7 +220,7 @@ function Notes() {
         {/* Notes List */}
         {notes.length === 0 ? (
           <div className="notes-empty">
-            <h3>No notes yet! </h3>
+            <h3>No notes yet!</h3>
             <p>
               Your thoughts deserve a beautiful place.
               Add your first note!
@@ -251,14 +252,13 @@ function Notes() {
                     onClick={() => handleDelete(note._id)}
                     className="btn btn-delete"
                   >
-                     Delete
+                    Delete
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
-
       </div>
     </div>
   );
