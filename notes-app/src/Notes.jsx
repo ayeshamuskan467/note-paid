@@ -12,25 +12,41 @@ function Notes() {
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch all notes
+  // Fetch all notes and show the actual error if it fails
   const fetchNotes = async () => {
+    setFetching(true);
+
     try {
       setError("");
 
       const response = await fetch(API_URL);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch notes");
+        throw new Error(
+          `Server error: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Server did not return a valid notes list.");
+      }
+
       setNotes(data);
-    } catch {
+    } catch (err) {
+      console.error("Fetch notes error:", err);
+
       setError(
-        "Notes load nahi huay. Please check your backend connection."
+        `Notes load nahi huay: ${
+          err.message || "Network request failed"
+        }. Please refresh the page and try again.`
       );
+    } finally {
+      setFetching(false);
     }
   };
 
@@ -70,7 +86,7 @@ function Notes() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Unable to save note");
+        throw new Error(data.message || `Server error: ${response.status}`);
       }
 
       setTitle("");
@@ -79,7 +95,13 @@ function Notes() {
 
       await fetchNotes();
     } catch (err) {
-      setError(err.message || "Something went wrong.");
+      console.error("Save note error:", err);
+
+      setError(
+        `Unable to save note: ${
+          err.message || "Network request failed"
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -90,6 +112,7 @@ function Notes() {
     setTitle(note.title);
     setContent(note.content);
     setEditingId(note._id);
+    setError("");
 
     window.scrollTo({
       top: 0,
@@ -113,21 +136,21 @@ function Notes() {
 
     if (!confirmed) return;
 
-    try {
-      setError("");
+    setError("");
 
+    try {
       const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
       });
 
       if (!response.ok) {
-        let message = "Unable to delete note";
+        let message = `Server error: ${response.status}`;
 
         try {
           const data = await response.json();
           message = data.message || message;
         } catch {
-          // Response may have no JSON body
+          // The response may not contain JSON
         }
 
         throw new Error(message);
@@ -139,7 +162,13 @@ function Notes() {
 
       await fetchNotes();
     } catch (err) {
-      setError(err.message || "Failed to delete note.");
+      console.error("Delete note error:", err);
+
+      setError(
+        `Unable to delete note: ${
+          err.message || "Network request failed"
+        }`
+      );
     }
   };
 
@@ -149,7 +178,7 @@ function Notes() {
         {/* Header */}
         <div className="notes-header">
           <h1>
-            <span>My Notes</span>{" "}
+            <span>My Notes</span> ✨
           </h1>
 
           <p>Create, manage and organize your notes.</p>
@@ -180,7 +209,9 @@ function Notes() {
           />
 
           {error && (
-            <p className="notes-error">{error}</p>
+            <p className="notes-error" role="alert">
+              {error}
+            </p>
           )}
 
           <div className="note-actions">
@@ -213,12 +244,16 @@ function Notes() {
           <h2>My Collection</h2>
 
           <span className="note-count">
-            {notes.length} Notes
+            {notes.length} {notes.length === 1 ? "Note" : "Notes"}
           </span>
         </div>
 
-        {/* Notes List */}
-        {notes.length === 0 ? (
+        {/* Loading State */}
+        {fetching ? (
+          <div className="notes-empty">
+            <p>Loading your notes...</p>
+          </div>
+        ) : notes.length === 0 && !error ? (
           <div className="notes-empty">
             <h3>No notes yet!</h3>
             <p>
@@ -226,17 +261,13 @@ function Notes() {
               Add your first note!
             </p>
           </div>
-        ) : (
+        ) : notes.length > 0 ? (
           <div className="notes-grid">
             {notes.map((note) => (
               <div key={note._id} className="note-card">
-                <h3 className="note-title">
-                  {note.title}
-                </h3>
+                <h3 className="note-title">{note.title}</h3>
 
-                <p className="note-content">
-                  {note.content}
-                </p>
+                <p className="note-content">{note.content}</p>
 
                 <div className="note-actions">
                   <button
@@ -257,6 +288,19 @@ function Notes() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : null}
+
+        {/* Retry Button */}
+        {!fetching && error && notes.length === 0 && (
+          <div className="notes-empty">
+            <button
+              type="button"
+              onClick={fetchNotes}
+              className="btn btn-primary"
+            >
+              Try Again
+            </button>
           </div>
         )}
       </div>
